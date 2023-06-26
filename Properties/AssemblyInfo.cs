@@ -10,11 +10,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("buildtex")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Create TEX/SCN for Guitar Hero 3.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("donnaken15")]
 [assembly: AssemblyProduct("buildtex")]
-[assembly: AssemblyCopyright("Copyright 2023")]
+[assembly: AssemblyCopyright("Copyright Wesley Kennedy 2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

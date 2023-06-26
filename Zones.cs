@@ -44,7 +44,7 @@ public class Zones
 			Image.Dispose();
 			rawimg = null;
 		}
-		struct Head
+		public struct Head
 		{
 			public uint magic;
 			public uint key; // null on .imgs, named on .tex
@@ -65,28 +65,28 @@ public class Zones
 			// like with imggen
 			public uint unk4;
 		}
-		Head head;
-		ushort widthScale
+		public Head head;
+		public ushort widthScale
 		{
 			get { return head.w_scale; }
 			set { head.w_scale = value; }
 		}
-		ushort widthClip
+		public ushort widthClip
 		{
 			get { return head.w_clip; }
 			set { head.w_clip = value; }
 		}
-		ushort heightScale
+		public ushort heightScale
 		{
 			get { return head.h_scale; }
 			set { head.h_scale = value; }
 		}
-		ushort heightClip
+		public ushort heightClip
 		{
 			get { return head.h_clip; }
 			set { head.h_clip = value; }
 		}
-		byte[] rawimg;
+		public byte[] rawimg;
 		uint magic
 		{
 			get { return Eswap(Bit.ToUInt32(rawimg, 0)); }
@@ -299,18 +299,27 @@ public class Zones
 
 	public class GFX
 	{
+		public const uint magic = 0xFACECAA7;
+		public const ushort const1 = 0x011C;
 		private struct Head
 		{
 			public uint magic;
-			public ushort unk1;
+			public ushort const1; // 0x11C
 			public ushort count;
 			public uint start;
 			// soy C# requiring ints
-			public uint unk2, _FFFFFFFF, unk3, unk4;
+			// start + (count*44)         ??? "used in ef calculation" wtf
+			public uint szrel, _FFFFFFFF, texLog, a28;
 		}
 		// INACCESSIBLE HOW
 		private Head head;
 		private List<RawImg> Images;
+		public uint texLog {
+			get { return head.texLog; }
+			set { head.texLog = value; }
+		}
+		public uint startPos { get { return head.start; } }
+		public uint szrel { get { return head.szrel; } }
 		public int Count { get { return Images.Count; } }
 		public List<RawImg>.Enumerator GetEnumerator() { return Images.GetEnumerator(); }
 		public RawImg this[int i]
@@ -333,54 +342,39 @@ public class Zones
 			}
 			return -1;
 		}
-		public GFX(byte[] a)
+		public void UpdateHeader()
+		{
+			switch (head.texLog) // why
+			{
+				case 2:
+					head.start = 0x68;
+					break;
+				case 8:
+					head.start = 0xC38;
+					break;
+			}
+			head.count = (ushort)Images.Count;
+			head.szrel = head.start + (uint)(head.count*44);
+		}
+		public void Add(RawImg i)
+		{
+			Images.Add(i);
+			UpdateHeader();
+		}
+		public void Remove(uint crc)
+		{
+			Images.RemoveAt(IndexOf(crc));
+			UpdateHeader();
+		}
+		public GFX()
 		{
 			head = new Head();
-			if (Bit.ToUInt32(a, 0) != Eswap(0xFACECAA7))
-			{
-				head.magic = 0xBAADF00D;
-				throw new FormatException("Invalid header.");
-			}
-			head.magic = Eswap(0xFACECAA7);
-			int cursor = 4;
-			head.unk1 = Eswap(Bit.ToUInt16(a, cursor));
-			cursor += 2;
-			head.count = Eswap(Bit.ToUInt16(a, cursor));
-			cursor += 2;
-			// lol
-			head.start = Eswap(Bit.ToUInt32(a, cursor));
-			cursor += 4;
-			head.unk2 = Eswap(Bit.ToUInt32(a, cursor));
-			cursor += 4;
-			head._FFFFFFFF = Eswap(Bit.ToUInt32(a, cursor));
-			cursor += 4;
-			head.unk3 = Eswap(Bit.ToUInt32(a, cursor));
-			cursor += 4;
-			head.unk4 = Eswap(Bit.ToUInt32(a, cursor));
-			cursor += 4;
-			while (cursor < head.start)
-			{
-				if (Eswap(Bit.ToUInt32(a, cursor)) != 0xEFEFEFEF)
-				{
-					head.magic = 0xBAADF00D;
-					throw new FormatException("Invalid header. Cursor @ 0x"+cursor.ToString("X8"));
-					//return;
-				}
-				cursor += 4;
-			}
-			Images = new List<RawImg>(128);
-			for (int i = 0; i < head.count; i++)
-			{
-				byte[] entry = new byte[0x28];
-				Array.Copy(a,cursor,entry,0,0x28);
-				int offset = (int)Eswap(Bit.ToUInt32(entry, 0x1C));
-				int size = (int)Eswap(Bit.ToUInt32(entry, 0x20));
-				Array.Copy(Bit.GetBytes(0x28000000), 0, entry, 0x1C, 4);
-				Array.Resize(ref entry, 0x28 + size);
-				Array.Copy(a,offset,entry,0x28,size);
-				Images.Add(new RawImg(entry));
-				cursor += 0x28;
-			}
+			head.magic = 0xFACECAA7;
+			head.const1 = 0x11C;
+			head._FFFFFFFF = 0xFFFFFFFF;
+			head.texLog = 8;
+			head.a28 = 0x1C;
+			Images = new List<RawImg>();
 		}
 	}
 
