@@ -68,7 +68,6 @@ class Program
 		ini.Load(target);
 		Scene scn = new Scene();
 		GFX gfx = new GFX();
-		List<uint> usedTex = new List<uint>();
 		int ii = 0;
 		foreach (IniFile.IniSection s in ini.Sections)
 		{
@@ -142,11 +141,8 @@ class Program
 				// this needs to be optimized or something
 				if ((k = s.GetKey("Texture")) != null)
 				{
-					QbKey tex = QbKey.Create(k.Value);
-					if (usedTex.IndexOf(tex.Crc) == -1)
 					{
-						usedTex.Add(tex.Crc);
-						texList.Add(tex);
+						texList.Add(QbKey.Create(k.Value));
 						texNames.Add(k.Value);
 						string texkeystr = k.Value;
 						if ((k = s.GetKey("TexName")) != null)
@@ -164,11 +160,8 @@ class Program
 				}
 				while ((k = s.GetKey("Texture"+texList.Count)) != null)
 				{
-					QbKey tex = QbKey.Create(k.Value);
-					if (usedTex.IndexOf(tex.Crc) == -1)
 					{
-						usedTex.Add(tex.Crc);
-						texList.Add(tex);
+						texList.Add(QbKey.Create(k.Value));
 						texNames.Add(k.Value);
 						string texkeystr = k.Value;
 						if ((k = s.GetKey("TexName"+texList.Count)) != null)
@@ -210,7 +203,8 @@ class Program
 						img.widthClip = (ushort)texClip[i].Width;
 						img.heightClip = (ushort)texClip[i].Height;
 					}
-					gfx.Add(img);
+					if (gfx.IndexOf(img.Name.Crc) == -1)
+						gfx.Add(img);
 				}
 				
 				for (int i = 0; i < texList.Count; i++)
@@ -236,9 +230,7 @@ class Program
 				{
 					string file = k.Value;
 					QbKey tex = QbKey.Create(file);
-					if (usedTex.IndexOf(tex.Crc) == -1)
 					{
-						usedTex.Add(tex.Crc);
 						string texkeystr = k.Value;
 						if ((k = s.GetKey("TexName")) != null)
 							texkeystr = k.Value;
@@ -267,7 +259,8 @@ class Program
 							img.widthClip = (ushort)clip.Width;
 							img.heightClip = (ushort)clip.Height;
 						}
-						gfx.Add(img);
+						if (gfx.IndexOf(img.Name.Crc) == -1)
+							gfx.Add(img);
 					}
 				}
 			}
