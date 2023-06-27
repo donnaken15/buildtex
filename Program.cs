@@ -156,7 +156,7 @@ class Program
 						if ((k = s.GetKey("TexScale")) != null)
 							scale = atos(k.Value);
 						texScale.Add(scale);
-						Size clip = nullsize;
+						Size clip = scale;
 						if ((k = s.GetKey("TexClip")) != null)
 							clip = atos(k.Value);
 						texClip.Add(clip);
@@ -178,7 +178,7 @@ class Program
 						if ((k = s.GetKey("TexScale"+texList.Count)) != null)
 							scale = atos(k.Value);
 						texScale.Add(scale);
-						Size clip = nullsize;
+						Size clip = scale;
 						if ((k = s.GetKey("TexClip"+texList.Count)) != null)
 							clip = atos(k.Value);
 						texClip.Add(clip);
@@ -200,12 +200,12 @@ class Program
 							"Couldn't find the texture "+texNames[i]+", from material "+s.Name+'.',texNames[i]);
 					Img img = Img.MakeFromRaw(texNames[i]+ext);
 					img.Name = texKeys[i];
-					if (texScale[i] != nullsize)
+					if (!texScale[i].Equals(nullsize))
 					{
 						img.widthScale = (ushort)texScale[i].Width;
 						img.heightScale = (ushort)texScale[i].Height;
 					}
-					if (texClip[i] != nullsize)
+					if (!texClip[i].Equals(nullsize))
 					{
 						img.widthClip = (ushort)texClip[i].Width;
 						img.heightClip = (ushort)texClip[i].Height;
@@ -230,6 +230,7 @@ class Program
 			}
 			else
 			{
+				Console.WriteLine("[" + ++ii + "/" + ini.Sections.Count + "] "+s.Name.Substring(13));
 				IniFile.IniSection.IniKey k;
 				if ((k = s.GetKey("Texture")) != null)
 				{

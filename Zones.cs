@@ -188,6 +188,16 @@ public class Zones
 			Array.Copy(rawimg, 0, exported, 0x28, rawimg.Length);
 			return exported;
 		}
+		public RawImg(string fname)
+		{
+			setHead();
+			rawimg = File.ReadAllBytes(fname);
+			head.w_scale = (ushort)Image.Width;
+			head.h_scale = (ushort)Image.Height;
+			head.w_clip = (ushort)Image.Width;
+			head.h_clip = (ushort)Image.Height;
+			head.size = (uint)rawimg.Length;
+		}
 		public RawImg(Image img)
 		{
 			setHead();
@@ -249,16 +259,12 @@ public class Zones
 		{
 			byte[] raw = File.ReadAllBytes(fname);
 			if (Bit.ToUInt32(raw, 0) == 0x20534444)
-			{
 				// stupid
 				return new RawImg(DDSImage.Load(fname), raw);
-			}
 			else if (Bit.ToUInt32(raw, 0) == Eswap(_magic))
-			{
 				return new RawImg(raw);
-			}
 			else
-				return new RawImg(Image.FromFile(fname));
+				return new RawImg(fname); // bloated image
 		}
 		public void Export(string fname)
 		{
