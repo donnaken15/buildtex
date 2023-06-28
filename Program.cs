@@ -115,6 +115,47 @@ class Program
 				while ((k = s.GetKey("PostProps"+postList.Count)) != null)
 					postList.Add(parseV4(k.Value));
 				
+				// get texture list (typically has 1, because highway sprites)
+				List<string> texNames = new List<string>();
+				List<QbKey> texKeys = new List<QbKey>();
+				List<Size> texScale = new List<Size>(); // >:(
+				List<Size> texClip = new List<Size>();
+				// this needs to be optimized or something
+				if ((k = s.GetKey("Texture")) != null)
+				{
+					texList.Add(QbKey.Create(k.Value));
+					texNames.Add(k.Value);
+					string texkeystr = k.Value;
+					if ((k = s.GetKey("TexName")) != null)
+						texkeystr = k.Value;
+					texKeys.Add(QbKey.Create(texkeystr));
+					Size scale = nullsize;
+					if ((k = s.GetKey("TexScale")) != null)
+						scale = atos(k.Value);
+					texScale.Add(scale);
+					Size clip = scale;
+					if ((k = s.GetKey("TexClip")) != null)
+						clip = atos(k.Value);
+					texClip.Add(clip);
+				}
+				while ((k = s.GetKey("Texture"+texList.Count)) != null)
+				{
+					texList.Add(QbKey.Create(k.Value));
+					texNames.Add(k.Value);
+					string texkeystr = k.Value;
+					if ((k = s.GetKey("TexName"+texList.Count)) != null)
+						texkeystr = k.Value;
+					texKeys.Add(QbKey.Create(texkeystr));
+					Size scale = nullsize;
+					if ((k = s.GetKey("TexScale"+texList.Count)) != null)
+						scale = atos(k.Value);
+					texScale.Add(scale);
+					Size clip = scale;
+					if ((k = s.GetKey("TexClip"+texList.Count)) != null)
+						clip = atos(k.Value);
+					texClip.Add(clip);
+				}
+				
 				// append these to material struct
 				
 				// --------------
@@ -133,50 +174,7 @@ class Program
 				m.ssize += (m.postPropCount<<4);
 				for (int i = 0; i < postList.Count; i++)
 					m.CopyVec(postList[i], m.postPropOffset+(i<<4));
-				// get texture list (typically has 1, because highway sprites)
-				List<string> texNames = new List<string>();
-				List<QbKey> texKeys = new List<QbKey>();
-				List<Size> texScale = new List<Size>(); // >:(
-				List<Size> texClip = new List<Size>();
-				// this needs to be optimized or something
-				if ((k = s.GetKey("Texture")) != null)
-				{
-					{
-						texList.Add(QbKey.Create(k.Value));
-						texNames.Add(k.Value);
-						string texkeystr = k.Value;
-						if ((k = s.GetKey("TexName")) != null)
-							texkeystr = k.Value;
-						texKeys.Add(QbKey.Create(texkeystr));
-						Size scale = nullsize;
-						if ((k = s.GetKey("TexScale")) != null)
-							scale = atos(k.Value);
-						texScale.Add(scale);
-						Size clip = scale;
-						if ((k = s.GetKey("TexClip")) != null)
-							clip = atos(k.Value);
-						texClip.Add(clip);
-					}
-				}
-				while ((k = s.GetKey("Texture"+texList.Count)) != null)
-				{
-					{
-						texList.Add(QbKey.Create(k.Value));
-						texNames.Add(k.Value);
-						string texkeystr = k.Value;
-						if ((k = s.GetKey("TexName"+texList.Count)) != null)
-							texkeystr = k.Value;
-						texKeys.Add(QbKey.Create(texkeystr));
-						Size scale = nullsize;
-						if ((k = s.GetKey("TexScale"+texList.Count)) != null)
-							scale = atos(k.Value);
-						texScale.Add(scale);
-						Size clip = scale;
-						if ((k = s.GetKey("TexClip"+texList.Count)) != null)
-							clip = atos(k.Value);
-						texClip.Add(clip);
-					}
-				}
+				
 				m.texCount = texList.Count;
 				m.texOffset = m.ssize;
 				m.ssize += (m.texCount<<2) + (int)align((uint)(m.texCount<<2), 4);
@@ -208,7 +206,7 @@ class Program
 				}
 				
 				for (int i = 0; i < texList.Count; i++)
-					m.CopyInt(texList[i].Crc, m.texOffset+(i<<2));
+					m.CopyInt(texKeys[i].Crc, m.texOffset+(i<<2));
 				m.CopyInt(int.Parse(ini.GetKeyValue(s.Name, "Blend", "0")),
 					Scene.Mat.toffset + 0x38);
 				m.CopyInt(int.Parse(ini.GetKeyValue(s.Name, "Technique", "0")),
@@ -229,39 +227,36 @@ class Program
 				if ((k = s.GetKey("Texture")) != null)
 				{
 					string file = k.Value;
-					QbKey tex = QbKey.Create(file);
+					string texkeystr = k.Value;
+					if ((k = s.GetKey("TexName")) != null)
+						texkeystr = k.Value;
+					Size scale = nullsize;
+					if ((k = s.GetKey("TexScale")) != null)
+						scale = atos(k.Value);
+					Size clip = scale;
+					if ((k = s.GetKey("TexClip")) != null)
+						clip = atos(k.Value);
+					string ext = null;
+					foreach (string e in new string[] {"png","dds","jpg","jpeg","bmp","tif","tiff"})
+						if (File.Exists(file+'.'+e))
+							{ ext = '.' + e; break; }
+					if (ext == null)
+						throw new FileNotFoundException(
+							"Couldn't find the texture "+file+", from material "+s.Name+'.',file);
+					Img img = Img.MakeFromRaw(file+ext);
+					img.Name = QbKey.Create(texkeystr);
+					if (scale != nullsize)
 					{
-						string texkeystr = k.Value;
-						if ((k = s.GetKey("TexName")) != null)
-							texkeystr = k.Value;
-						Size scale = nullsize;
-						if ((k = s.GetKey("TexScale")) != null)
-							scale = atos(k.Value);
-						Size clip = nullsize;
-						if ((k = s.GetKey("TexClip")) != null)
-							clip = atos(k.Value);
-						string ext = null;
-						foreach (string e in new string[] {"png","dds","jpg","jpeg","bmp","tif","tiff"})
-							if (File.Exists(file+'.'+e))
-								{ ext = '.' + e; break; }
-						if (ext == null)
-							throw new FileNotFoundException(
-								"Couldn't find the texture "+file+", from material "+s.Name+'.',file);
-						Img img = Img.MakeFromRaw(file+ext);
-						img.Name = tex;
-						if (scale != nullsize)
-						{
-							img.widthScale = (ushort)scale.Width;
-							img.heightScale = (ushort)scale.Height;
-						}
-						if (clip != nullsize)
-						{
-							img.widthClip = (ushort)clip.Width;
-							img.heightClip = (ushort)clip.Height;
-						}
-						if (gfx.IndexOf(img.Name.Crc) == -1)
-							gfx.Add(img);
+						img.widthScale = (ushort)scale.Width;
+						img.heightScale = (ushort)scale.Height;
 					}
+					if (clip != nullsize)
+					{
+						img.widthClip = (ushort)clip.Width;
+						img.heightClip = (ushort)clip.Height;
+					}
+					if (gfx.IndexOf(img.Name.Crc) == -1)
+						gfx.Add(img);
 				}
 			}
 		}
